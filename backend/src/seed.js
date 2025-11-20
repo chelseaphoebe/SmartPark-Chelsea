@@ -1,97 +1,101 @@
-require('dotenv').config();
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
-const connectDB = require('./config/db');
+require('dotenv').config();
+
 const User = require('./models/User');
 const ParkingLot = require('./models/ParkingLot');
 const ParkingSlot = require('./models/ParkingSlot');
 
-const seed = async () => {
+const connectDB = require('./config/db');
+
+const seedData = async () => {
   try {
     await connectDB();
+    
+    await User.deleteMany({});
+    await ParkingSlot.deleteMany({});
+    await ParkingLot.deleteMany({});
+    
+    console.log('Cleared existing data');
 
-    // Check if admin user exists, if not create one
-    const existingAdmin = await User.findOne({ email: 'admin@example.com' });
-    if (!existingAdmin) {
-      const salt = await bcrypt.genSalt(10);
-      const adminPass = await bcrypt.hash('admin123', salt);
-      const admin = new User({ 
-        name: 'Admin', 
-        email: 'admin@example.com', 
-        passwordHash: adminPass, 
-        role: 'ADMIN' 
+    const adminPassword = await bcrypt.hash('admin123', 10);
+    const admin = await User.create({
+      name: 'Admin User',
+      email: 'admin@example.com',
+      passwordHash: adminPassword,
+      role: 'ADMIN'
+    });
+
+    const userPassword = await bcrypt.hash('user123', 10);
+    const user = await User.create({
+      name: 'Regular User',
+      email: 'user@example.com',
+      passwordHash: userPassword,
+      role: 'USER'
+    });
+
+    console.log('Created users');
+
+    const lot1 = await ParkingLot.create({
+      name: 'Mall Parking',
+      capacity: 20
+    });
+
+    const lot2 = await ParkingLot.create({
+      name: 'Office Building',
+      capacity: 15
+    });
+
+    const lot3 = await ParkingLot.create({
+      name: 'Airport Terminal',
+      capacity: 30
+    });
+
+    console.log('Created parking lots');
+
+    const mallSlots = [];
+    for (let i = 1; i <= 20; i++) {
+      mallSlots.push({
+        lot: lot1._id,
+        code: `A${i}`,
+        status: i <= 5 ? 'OCCUPIED' : 'AVAILABLE' 
       });
-      await admin.save();
-      console.log('Admin user created');
-    } else {
-      console.log('Admin user already exists');
     }
+    await ParkingSlot.insertMany(mallSlots);
 
-    // Check if regular user exists, if not create one
-    const existingUser = await User.findOne({ email: 'user@example.com' });
-    if (!existingUser) {
-      const salt = await bcrypt.genSalt(10);
-      const userPass = await bcrypt.hash('user123', salt);
-      const user = new User({ 
-        name: 'User', 
-        email: 'user@example.com', 
-        passwordHash: userPass, 
-        role: 'USER' 
+    const officeSlots = [];
+    for (let i = 1; i <= 15; i++) {
+      officeSlots.push({
+        lot: lot2._id,
+        code: `B${i}`,
+        status: i <= 3 ? 'OCCUPIED' : 'AVAILABLE' 
       });
-      await user.save();
-      console.log('Regular user created');
-    } else {
-      console.log('Regular user already exists');
     }
+    await ParkingSlot.insertMany(officeSlots);
 
-    // Check if parking lots exist, if not create sample ones
-    const existingLots = await ParkingLot.find();
-    if (existingLots.length === 0) {
-      const lotA = new ParkingLot({ 
-        name: 'Mall A - Floor 1', 
-        capacity: 15, 
-        description: 'Mall A basement floor' 
+    const airportSlots = [];
+    for (let i = 1; i <= 30; i++) {
+      airportSlots.push({
+        lot: lot3._id,
+        code: `C${i}`,
+        status: i <= 10 ? 'OCCUPIED' : 'AVAILABLE' 
       });
-      const lotB = new ParkingLot({ 
-        name: 'Mall B - Ground', 
-        capacity: 12, 
-        description: 'Mall B ground floor' 
-      });
-      await lotA.save();
-      await lotB.save();
-
-      // Create slots for the new lots
-      const slots = [];
-      for (let i = 1; i <= 15; i++) {
-        slots.push({ 
-          lot: lotA._id, 
-          code: `A${i}`, 
-          status: i % 7 === 0 ? 'OCCUPIED' : 'AVAILABLE' 
-        });
-      }
-      for (let i = 1; i <= 12; i++) {
-        slots.push({ 
-          lot: lotB._id, 
-          code: `B${i}`, 
-          status: i % 5 === 0 ? 'RESERVED' : 'AVAILABLE' 
-        });
-      }
-
-      await ParkingSlot.insertMany(slots);
-      console.log('Sample parking lots and slots created');
-    } else {
-      console.log(`Found ${existingLots.length} existing parking lots - keeping them`);
     }
+    await ParkingSlot.insertMany(airportSlots);
 
-    console.log('Seed completed safely.');
-    console.log('Admin login -> admin@example.com / admin123');
-    console.log('User login  -> user@example.com / user123');
+    console.log('Created parking slots');
+
+    console.log('\n=== SEED DATA CREATED ===');
+    console.log('Admin: admin@example.com / admin123');
+    console.log('User: user@example.com / user123');
+    console.log('Parking Lots: 3 lots with slots created');
+    console.log('========================\n');
 
     process.exit(0);
-  } catch (err) {
-    console.error(err);
+  } catch (error) {
+    console.error('Seed error:', error);
     process.exit(1);
   }
 };
 
-seed();
+seedData();

@@ -23,6 +23,8 @@ exports.bookSlot = async (req, res) => {
       return res.status(400).json({ error: 'Slot is not available' });
     }
     const updatedSlot = await ParkingSlot.findByIdAndUpdate(slotId, { status: 'OCCUPIED' }, { new: true });
+    
+    // Broadcast real-time slot status change to all connected clients
     if (req.app.get('io')) {
       req.app.get('io').emit('slot-updated', {
         slotId: updatedSlot._id,

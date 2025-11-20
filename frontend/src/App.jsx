@@ -8,6 +8,10 @@ import AdminDashboard from "./pages/AdminDashboard";
 import { useContext } from "react";
 import { AuthContext } from "./context/AuthContext";
 
+/**
+ * Protected route wrapper with role-based access control
+ * Redirects unauthenticated users to login, unauthorized users to dashboard
+ */
 function RequireAuth({ children, role }) {
   const { user } = useContext(AuthContext);
   if (!user) return <Navigate to="/login" />;
@@ -24,7 +28,7 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         
-        {/* Redirect to login if not authenticated */}
+        {/* Force login page on first visit - no auto-authentication */}
         <Route path="/" element={!user ? <Navigate to="/login" /> : <Dashboard />} />
 
 

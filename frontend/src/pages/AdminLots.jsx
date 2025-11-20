@@ -4,11 +4,12 @@ import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
 export default function AdminLots() {
-  const [lots, setLots] = useState([]);
-  const [form, setForm] = useState({ name: "", capacity: "" });
-  const [editMode, setEditMode] = useState(null);
-  const [editForm, setEditForm] = useState({ name: "", capacity: "" });
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  // State management for parking lots data and UI interactions
+  const [lots, setLots] = useState([]);                    // Array of parking lots from API
+  const [form, setForm] = useState({ name: "", capacity: "" }); // Form data for creating new lot
+  const [editMode, setEditMode] = useState(null);          // ID of lot currently being edited (null = no edit)
+  const [editForm, setEditForm] = useState({ name: "", capacity: "" }); // Form data for editing existing lot
+  const [sidebarOpen, setSidebarOpen] = useState(false);   // Toggle state for hamburger sidebar
   const navigate = useNavigate();
 
   const ASTA = {
@@ -48,46 +49,60 @@ export default function AdminLots() {
     }
   };
 
-  // Delete Lot
-const handleDelete = async (id) => {
-  if (!confirm("Are you sure you want to delete this parking lot?")) return;
-  
-  try {
-    console.log("Deleting lot with ID:", id);
-    await api.delete(`/lots/${id}`);
+  /**
+   * Delete parking lot with validation
+   * Prevents deletion if lot has occupied slots (backend validation)
+   * Updates UI optimistically on success, shows specific error messages on failure
+   */
+  const handleDelete = async (id) => {
+    if (!confirm("Are you sure you want to delete this parking lot?")) return;
     
-    toast.success("Parking lot deleted successfully!");
-    
-    setLots(prev => prev.filter(lot => lot._id !== id));
-    
-  } catch (error) {
-    console.error("Delete error:", error);
-    
-    if (error.response?.status === 400) {
-      const errorMsg = error.response?.data?.error || "Cannot delete parking lot with occupied slots";
-      toast.error(errorMsg);
-    } else if (error.response?.status === 404) {
-      toast.error("Parking lot not found");
-    } else {
-      toast.error("Failed to delete parking lot.");
+    try {
+      console.log("Deleting lot with ID:", id);
+      await api.delete(`/lots/${id}`);
+      
+      toast.success("Parking lot deleted successfully!");
+      
+      // Optimistic UI update - remove from local state without API call
+      setLots(prev => prev.filter(lot => lot._id !== id));
+      
+    } catch (error) {
+      console.error("Delete error:", error);
+      
+      // Handle specific error cases with appropriate user feedback
+      if (error.response?.status === 400) {
+        const errorMsg = error.response?.data?.error || "Cannot delete parking lot with occupied slots";
+        toast.error(errorMsg);
+      } else if (error.response?.status === 404) {
+        toast.error("Parking lot not found");
+      } else {
+        toast.error("Failed to delete parking lot.");
+      }
     }
-  }
-};
+  };
+  /**
+   * Enter edit mode for a specific parking lot
+   * Populates edit form with current lot data
+   */
   const startEdit = (lot) => {
-    setEditMode(lot._id);
-    setEditForm({ name: lot.name, capacity: lot.capacity });
+    setEditMode(lot._id);  // Set which lot is being edited
+    setEditForm({ name: lot.name, capacity: lot.capacity }); // Pre-fill form with current values
   };
 
+  /**
+   * Save edited parking lot data
+   * Validates and sends updated data to backend, refreshes lot list on success
+   */
   const saveEdit = async (id) => {
     try {
       await api.put(`/lots/${id}`, {
         name: editForm.name,
-        capacity: Number(editForm.capacity),
+        capacity: Number(editForm.capacity), // Ensure capacity is numeric
       });
 
-      setEditMode(null);
+      setEditMode(null);  // Exit edit mode
       toast.success("Updated successfully!");
-      loadLots();
+      loadLots();  // Refresh data from server to get updated slot counts
     } catch {
       toast.error("Failed to update");
     }
@@ -95,7 +110,13 @@ const handleDelete = async (id) => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0b47a1] via-[#0d4aa7] to-[#0b2f66] text-white">
-      {/* Hamburger Button */}
+      {/* 
+        Hamburger Navigation System
+        - Button only visible when sidebar is closed
+        - Sidebar slides in from left with smooth animation
+        - Overlay closes sidebar when clicked
+        - Navigation between Analytics and Parking Lots pages
+      */}
       {!sidebarOpen && (
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -107,11 +128,12 @@ const handleDelete = async (id) => {
         </button>
       )}
 
-      {/* Sidebar */}
+      {/* Sidebar with slide animation - transforms from -translate-x-full to translate-x-0 */}
       <div className={`fixed inset-y-0 left-0 z-40 w-64 bg-white shadow-xl transform transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="p-6">
           <h2 className="text-xl font-bold text-gray-800 mb-6">Admin Menu</h2>
           <nav className="space-y-2">
+            {/* Analytics navigation - navigates and closes sidebar */}
             <button
               onClick={() => {
                 navigate('/admin/dashboard');
@@ -124,6 +146,7 @@ const handleDelete = async (id) => {
               </svg>
               Analytics
             </button>
+            {/* Current page indicator - highlighted in blue */}
             <button
               onClick={() => setSidebarOpen(false)}
               className="w-full text-left px-4 py-3 bg-[#003E92] rounded-lg text-white flex items-center gap-3"
@@ -137,6 +160,7 @@ const handleDelete = async (id) => {
         </div>
       </div>
 
+      {/* Semi-transparent overlay - closes sidebar when clicked */}
       {sidebarOpen && (
         <div
           className="fixed inset-0 z-30 bg-black/50"
@@ -231,8 +255,7 @@ const handleDelete = async (id) => {
 
               <button
                 type="submit"
-                className="px-8 py-3 rounded-xl text-white font-semibold hover:opacity-90 transition shadow-md"
-                style={{ backgroundColor: ASTA.darkBlue }}
+                className="px-8 py-3 rounded-xl text-white font-semibold hover:text-white transition shadow-sm flex justify-center items-center text-center bg-[#003E92] hover:bg-[#002B63]"
               >
                 Create
               </button>
@@ -246,8 +269,14 @@ const handleDelete = async (id) => {
                 key={lot._id}
                 className="bg-white rounded-2xl shadow-md p-6 flex flex-col md:flex-row justify-between gap-4 border border-gray-200"
               >
+                {/* 
+                  Conditional rendering: Edit mode vs Display mode
+                  Edit mode shows inline form inputs, Display mode shows lot info with action buttons
+                */}
                 {editMode === lot._id ? (
+                  // EDIT MODE: Inline editing form
                   <div className="w-full flex flex-col gap-3">
+                    {/* Lot name input */}
                     <input
                       type="text"
                       className="border border-gray-300 bg-white p-3 rounded-xl focus:ring-2 focus:ring-[#003E92] focus:border-transparent"
@@ -258,6 +287,7 @@ const handleDelete = async (id) => {
                       required
                     />
 
+                    {/* Capacity input with validation */}
                     <input
                       type="number"
                       className="border border-gray-300 bg-white p-3 rounded-xl focus:ring-2 focus:ring-[#003E92] focus:border-transparent"
@@ -269,6 +299,7 @@ const handleDelete = async (id) => {
                       required
                     />
 
+                    {/* Save/Cancel buttons */}
                     <div className="flex gap-3">
                       <button
                         onClick={() => saveEdit(lot._id)}
@@ -287,6 +318,7 @@ const handleDelete = async (id) => {
                     </div>
                   </div>
                 ) : (
+                  // DISPLAY MODE: Show lot information and action buttons
                   <>
                     <div>
                       <h3 className="text-xl font-bold text-gray-900">{lot.name}</h3>
@@ -296,17 +328,19 @@ const handleDelete = async (id) => {
                     </div>
 
                     <div className="flex gap-3">
-                      <Link
-                        to={`/lots/${lot._id}`}
-                        className="px-4 py-2 rounded-xl text-white hover:opacity-90 transition shadow-sm"
-                        style={{ backgroundColor: ASTA.darkBlue }}
-                      >
-                        View Slots
-                      </Link>
+                    <Link
+  to={`/lots/${lot._id}`}
+  className="px-4 py-2 hover:text-white rounded-xl text-white transition shadow-sm flex justify-center items-center text-center 
+             bg-[#003E92] hover:bg-[#002B63]"
+>
+  View Slots
+</Link>
+
+
 
                       <button
                         onClick={() => startEdit(lot)}
-                        className="px-4 py-2 rounded-xl bg-yellow-500 text-white hover:bg-yellow-600 transition shadow-sm"
+                        className="px-4 py-2 rounded-xl bg-yellow-500  hover:border-yellow-600 text-white hover:bg-yellow-600 transition shadow-sm"
                       >
                         Edit
                       </button>

@@ -3,8 +3,10 @@ import { createContext, useState, useEffect } from "react";
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
+  // Force login on every app load - no auto-login from localStorage
   const [user, setUser] = useState(null);
 
+  // Sync user state with localStorage, clear all auth data on logout
   useEffect(() => {
     if (user) localStorage.setItem("user", JSON.stringify(user));
     else {

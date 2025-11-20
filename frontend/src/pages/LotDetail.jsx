@@ -56,18 +56,22 @@ export default function LotDetail() {
 
     loadData();
 
+    // Real-time slot updates via WebSocket
     const socket = io("http://localhost:5000");
     socket.on("slot-updated", (payload) => {
       if (!payload || payload.lotId !== id) return;
+      // Update specific slot status in real-time
       setSlots((prev) =>
         prev.map((s) => (s._id === payload.slotId ? { ...s, status: payload.status } : s))
       );
 
+      // Clear selection if selected slot becomes occupied
       if (selectedSlot && payload.slotId === selectedSlot._id && isOccupiedStatus(payload.status)) {
         setSelectedSlot(null);
       }
     });
 
+    // Cleanup: prevent memory leaks and close socket connection
     return () => {
       mounted = false;
       socket.disconnect();
@@ -130,6 +134,10 @@ export default function LotDetail() {
     }
   };
 
+  /**
+   * Role-based navigation - different back destinations based on user type
+   * Admin users return to admin lots management, regular users to dashboard
+   */
   const goBack = () => {
     console.log("goBack called");
     console.log("Current user:", user);

@@ -13,7 +13,10 @@ exports.register = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(password, salt);
 
-    // Set role based on email - only admin@example.com is admin
+    /**
+     * Role assignment logic: Only admin@example.com gets ADMIN role
+     * All other emails automatically get USER role for security
+     */
     const userRole = email === 'admin@example.com' ? 'ADMIN' : 'USER';
     const user = new User({ name, email, passwordHash, role: userRole });
     await user.save();
