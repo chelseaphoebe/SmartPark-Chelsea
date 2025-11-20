@@ -220,42 +220,44 @@ export default function AdminLots() {
 
             <form
               onSubmit={handleCreate}
-              className="flex flex-col md:flex-row gap-4 items-end"
+              className="flex flex-col gap-4"
             >
-              <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Lot Name
-                </label>
-                <input
-                  type="text"
-                  placeholder="Enter lot name"
-                  className="w-full bg-white border border-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-[#003E92] focus:border-transparent transition"
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  required
-                />
-              </div>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Lot Name
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Enter lot name"
+                    className="w-full bg-white border border-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-[#003E92] focus:border-transparent transition"
+                    value={form.name}
+                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                    required
+                  />
+                </div>
 
-              <div className="w-full md:w-32">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Capacity
-                </label>
-                <input
-                  type="number"
-                  placeholder="0"
-                  min="1"
-                  className="w-full border bg-white border-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-[#003E92] focus:border-transparent transition"
-                  value={form.capacity}
-                  onChange={(e) =>
-                    setForm({ ...form, capacity: e.target.value })
-                  }
-                  required
-                />
+                <div className="w-full sm:w-32">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Capacity
+                  </label>
+                  <input
+                    type="number"
+                    placeholder="0"
+                    min="1"
+                    className="w-full border bg-white border-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-[#003E92] focus:border-transparent transition"
+                    value={form.capacity}
+                    onChange={(e) =>
+                      setForm({ ...form, capacity: e.target.value })
+                    }
+                    required
+                  />
+                </div>
               </div>
 
               <button
                 type="submit"
-                className="px-8 py-3 rounded-xl text-white font-semibold hover:text-white transition shadow-sm flex justify-center items-center text-center bg-[#003E92] hover:bg-[#002B63]"
+                className="w-full sm:w-auto px-8 py-3 rounded-xl text-white font-semibold hover:text-white transition shadow-sm flex justify-center items-center text-center bg-[#003E92] hover:bg-[#002B63]"
               >
                 Create
               </button>

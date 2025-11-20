@@ -165,23 +165,27 @@ export default function AdminDashboard() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             
             {/* Pie Chart - Overall Occupancy */}
-            <div className="bg-gray-50 p-6 rounded-xl">
-              <h3 className="text-xl font-semibold mb-4">Overall Occupancy</h3>
-              <ResponsiveContainer width="100%" height={300}>
+            <div className="bg-gray-50 p-4 md:p-6 rounded-xl">
+              <h3 className="text-lg md:text-xl font-semibold mb-4">Overall Occupancy</h3>
+              <ResponsiveContainer width="100%" height={250}>
                 <PieChart>
                   <Pie
                     data={pieData}
                     cx="50%"
                     cy="50%"
-                    outerRadius={80}
+                    outerRadius={"70%"}
                     dataKey="value"
-                    label={({ name, value, percent }) => `${name}: ${value} (${(percent * 100).toFixed(0)}%)`}
+                    label={({ name, percent }) => {
+                      const isMobile = window.innerWidth < 768;
+                      return isMobile ? `${(percent * 100).toFixed(0)}%` : `${name}: ${(percent * 100).toFixed(0)}%`;
+                    }}
+                    labelLine={false}
                   >
                     {pieData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
-                  <Tooltip />
+                  <Tooltip formatter={(value, name) => [value, name]} />
                 </PieChart>
               </ResponsiveContainer>
             </div>

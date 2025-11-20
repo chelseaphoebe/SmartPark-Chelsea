@@ -203,10 +203,10 @@ export default function LotDetail() {
             ← Back
           </button>
 
-          <div className="flex items-center justify-between mb-6">
-            <div>
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
+            <div className="flex-1">
               <h2 className="text-xl font-semibold">Slots</h2>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-gray-500 mt-1">
                 {selectedSlot 
                   ? `Selected: ${selectedSlot.code} - Click NEXT to confirm`
                   : user?.role === 'ADMIN' 
@@ -216,9 +216,9 @@ export default function LotDetail() {
               </p>
             </div>
 
-            <div className="text-right">
-              <p className="text-sm text-gray-500">Status legend</p>
-              <div className="flex items-center gap-3 mt-2">
+            <div className="lg:text-right">
+              <p className="text-sm text-gray-500 mb-2">Status legend</p>
+              <div className="flex flex-wrap items-center gap-3 sm:gap-4">
                 <div className="flex items-center gap-2">
                   <span className="inline-block w-4 h-4 rounded bg-white border border-gray-300" />
                   <span className="text-xs text-gray-600">Available</span>
@@ -284,7 +284,7 @@ export default function LotDetail() {
           )}
 
           {selectedSlot && (
-            <div className="fixed bottom-6 right-48 z-50">
+            <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 md:left-auto md:right-48 md:transform-none z-50">
               <button
                 onClick={handleNext}
                 className="px-8 py-4 rounded-full text-white font-semibold bg-[#003E92] hover:bg-[#002a66] shadow-xl transition-all duration-200 transform hover:scale-105"
