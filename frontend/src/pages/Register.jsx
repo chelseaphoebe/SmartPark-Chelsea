@@ -2,6 +2,7 @@ import { useState, useContext } from "react";
 import api from "../api/axios";
 import { useNavigate, Link } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
+import toast from "react-hot-toast";
 
 export default function Register() {
   const [form, setForm] = useState({ name: "", email: "", password: "" });
@@ -18,10 +19,10 @@ export default function Register() {
 
     try {
       await api.post("/auth/register", form);
-      alert("Registration successful! Please login.");
+      toast.success("Registration successful! Please login.");
       nav("/login");
     } catch (err) {
-      setError(err.response?.data?.error || "Registration failed");
+      toast.error(err.response?.data?.error || "Registration failed");
     } finally {
       setLoading(false);
     }

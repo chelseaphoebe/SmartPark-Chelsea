@@ -2,6 +2,7 @@ import { useState, useContext } from "react";
 import api from "../api/axios";
 import { useNavigate, Link } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
+import toast from "react-hot-toast";
 
 export default function Login() {
   const [form, setForm] = useState({ email: "", password: "" });
@@ -25,7 +26,9 @@ export default function Login() {
         nav("/");
       }
     } catch (err) {
-      setError(err.response?.data?.error || "Login failed");
+      const errorMsg = err.response?.data?.error || "Login failed";
+      setError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }
