@@ -1,9 +1,17 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import api from "../api/axios";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { AuthContext } from "../context/AuthContext";
 
 export default function Dashboard() {
   const [lots, setLots] = useState([]);
+  const { logout } = useContext(AuthContext);
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
   useEffect(() => {
     const loadLots = async () => {
@@ -41,14 +49,22 @@ export default function Dashboard() {
           </svg>
         </div>
 
-        <div className="relative z-10">
-          <p className="uppercase tracking-wider text-sm text-[#cbe0ff]">Parking System</p>
-          <h1 className="text-3xl md:text-5xl font-extrabold leading-tight">
-            Available Parking Lots
-          </h1>
-          <p className="mt-4 text-[#d8e8ff] max-w-xl">
-            Choose a parking lot to continue and select an available slot.
-          </p>
+        <div className="relative z-10 flex justify-between items-start">
+          <div>
+            <p className="uppercase tracking-wider text-sm text-[#cbe0ff]">Parking System</p>
+            <h1 className="text-3xl md:text-5xl font-extrabold leading-tight">
+              Available Parking Lots
+            </h1>
+            <p className="mt-4 text-[#d8e8ff] max-w-xl">
+              Choose a parking lot to continue and select an available slot.
+            </p>
+          </div>
+          <button
+            onClick={handleLogout}
+            className="px-4 py-2 bg-white/20 backdrop-blur-sm rounded-lg hover:bg-white/30 transition text-white font-medium"
+          >
+            Logout
+          </button>
         </div>
       </div>
 
