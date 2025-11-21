@@ -11,12 +11,16 @@ const adminRoutes = require('./routes/admin');
 const app = express();
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
     ? ['https://smart-park-chelsea-git-master-chelseaphoebes-projects.vercel.app', 'https://smartpark-chelsea.vercel.app'] 
     : ['http://localhost:3000', 'http://localhost:5173'],
   credentials: true
 }));
+=======
+app.use(cors());
+>>>>>>> parent of ba7b23d (fix: deployment)
 =======
 app.use(cors());
 >>>>>>> parent of ba7b23d (fix: deployment)
@@ -38,6 +42,7 @@ const PORT = process.env.PORT || 5000;
 const server = app.listen(PORT, () => console.log("Server running on port " + PORT));
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 const io = require('socket.io')(server, { 
   cors: { 
     origin: process.env.NODE_ENV === 'production' 
@@ -46,6 +51,9 @@ const io = require('socket.io')(server, {
     credentials: true
   } 
 });
+=======
+const io = require('socket.io')(server, { cors: { origin: '*' } });
+>>>>>>> parent of ba7b23d (fix: deployment)
 =======
 const io = require('socket.io')(server, { cors: { origin: '*' } });
 >>>>>>> parent of ba7b23d (fix: deployment)
