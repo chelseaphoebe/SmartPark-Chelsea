@@ -28,71 +28,88 @@ SmartPark-Chelsea implements the MVP for a smart parking system:
 
 Bonus features implemented:
 - Admin analytics
+- Booking System
 
 ## Application's Architecture
-
-+-------------------------------------------------------------+
-|                          Frontend                           |
-|-------------------------------------------------------------|
-| React (Vite)                                                |
-| React Router DOM                                            |
-| Tailwind CSS                                                |
-| Context API (Auth State)                                    |
-|                                                             |
-| Fetches data from backend through REST API                  |
-| Stores JWT in memory (Context)                              |
-+-----------------------------▲-------------------------------+
-                              | HTTP Requests (JSON)
-                              | Authorization: Bearer <token>
-                              ▼
-+-------------------------------------------------------------+
-|                          Backend                            |
-|-------------------------------------------------------------|
-| Node.js + Express                                           |
-| REST API (Auth, Lots, Slots, Admin Analytics)               |
-| JWT-based authentication & RBAC                             |
-| Controllers + Routes + Middleware                           |
-| Mongoose Models (User, ParkingLot, ParkingSlot)             |
-+-----------------------------▲-------------------------------+
-                              | Mongoose ODM
-                              |
-                              ▼
-+-------------------------------------------------------------+
-|                          MongoDB                            |
-|-------------------------------------------------------------|
-| Stores:                                                     |
-| - Users                                                     |
-| - Parking Lots                                              |
-| - Parking Slots                                             |
-+-------------------------------------------------------------+
++=====================================================================================+
+|                                      Frontend                                        |
++=====================================================================================+
+| - React (Vite)                                                                       |
+| - React Router DOM                                                                   |
+| - Tailwind CSS                                                                       |
+| - Context API (Authentication State)                                                 |
+|                                                                                      |
+| Responsibilities:                                                                    |
+| • Renders UI for login, parking lots, slot details, and admin pages                  |
+| • Calls REST API using fetch() / Axios                                               |
+| • Stores JWT token in memory via Context API                                         |
+| • Sends Authorization: Bearer <token> with protected requests                        |
++---------------------------------------------▲---------------------------------------+
+                                              | HTTP (JSON)
+                                              | Authorization Header (JWT)
+                                              ▼
++=====================================================================================+
+|                                      Backend                                        |
++=====================================================================================+
+| - Node.js + Express                                                                  |
+| - REST API Endpoints (Auth, Lots, Slots, Admin)                                      |
+| - JWT Authentication & Role-Based Access Control                                     |
+| - Controllers + Routes + Middleware                                                  |
+| - Socket.io (real-time "slot-updated" events)                                        |
+| - Mongoose Models (User, ParkingLot, ParkingSlot)                                    |
+|                                                                                      |
+| Responsibilities:                                                                    |
+| • Validates requests and enforces access rules                                       |
+| • Handles booking, check-in, clear-slot workflows                                    |
+| • Communicates with MongoDB through Mongoose                                         |
+| • Emits real-time updates when slot status changes                                   |
++---------------------------------------------▲---------------------------------------+
+                                              | Mongoose ODM
+                                              |
+                                              ▼
++=====================================================================================+
+|                                      Database                                        |
++=====================================================================================+
+|                                      MongoDB                                         |
+|--------------------------------------------------------------------------------------|
+| Collections:                                                                         |
+| • users                                                                              |
+| • parking_lots                                                                       |
+| • parking_slots                                                                      |
+|                                                                                      |
+| Responsibilities:                                                                    |
+| • Stores user information, hashed passwords, and roles                               |
+| • Stores parking lots and their metadata                                             |
+| • Stores slot states, reservations, and expiry times                                 |
++=====================================================================================+
 
 ## Database Schema
++------------------+                               +----------------------------+
+|    parking_lots  | 1                           N |      parking_slots         |
++------------------+-------------------------------+----------------------------+
+| PK  _id          |                               | PK  _id                    |
+|     name         |                               |     lot (FK → parking_lots)| 
+|     capacity     |<------------------------------|     code (String)          |
+|     description  |   (1 parking lot has many     |     status (String)        |
+|     createdAt    |            slots)             |     bookedBy (FK → users)  |
+|     updatedAt    |                               |     bookingExpiry (Date)   |
++------------------+                               |     createdAt              |
+                                                   |     updatedAt              |
+                                                   +----------------------------+
++------------------+
+|      users       |
++------------------+
+| PK  _id          |
+|     name         |
+|     email        |
+|     passwordHash |
+|     role         |
+|     createdAt    |
+|     updatedAt    |
++------------------+
 
-+------------------+                               +----------------------+
-|    parking_lots  | 1                           N |    parking_slots     |
-+------------------+-------------------------------+----------------------+
-| PK  _id          |                               | PK  _id              |
-|     name         |                               |     lot (FK)         |
-|     capacity     |<------------------------------|     code             |
-|     description  |   (1 parking lot has many     |     status           |
-|     createdAt    |            slots)             |     createdAt        |
-|     updatedAt    |                               |     updatedAt        |
-+------------------+                               +----------------------+
-
-                        +------------------+
-                        |      users       |
-                        +------------------+
-                        | PK  _id          |
-                        |     name         |
-                        |     email        |
-                        |     passwordHash |
-                        |     role         |
-                        |     createdAt    |
-                        |     updatedAt    |
-                        +------------------+
-
-            (users interact through the system but do not have
-            direct foreign-key relationships to other collections.)
+(Users do not have direct FK links to lots,
+but can be associated to parking_slots via bookedBy.)
 
 ## Technology Choices
 
@@ -117,17 +134,14 @@ I chose the MERN stack because it cleanly separates the backend and frontend, wh
 
 ## API Design
 
-This web uses a RESTful API design. Each controller handles one type of resource (auth, lots, slots, admin), and all endpoints return JSON responses.
-Authentication uses JWT, sent via Authorization: Bearer <token>.
-
-Below are the main endpoints grouped by resource, including method, purpose, and example payloads.
+This project uses a RESTful API design. Each controller manages a single resource (auth, lots, slots, admin). All endpoints return JSON responses.
+Authentication uses JWT, passed in Authorization: Bearer <token>.
 
 ### AUTH ROUTES — /api/auth
 - POST /api/auth/register
 Register a new user.
 
 Body Example
-
 {
   "name": "Chelsea",
   "email": "chelsea@example.com",
@@ -135,7 +149,6 @@ Body Example
 }
 
 Response
-
 {
   "message": "User registered successfully",
   "user": {
@@ -168,31 +181,31 @@ Response
 
 ### PARKING LOT ROUTES — /api/lots
 - GET /api/lots
-List all parking lots with availability summary (public endpoint).
+List all parking lots with summarized availability.
 
 Response Example
 [
   {
-    "id": "67a0d...",
+    "_id": "67a0d...",
     "name": "Mall A - Floor 1",
     "capacity": 15,
-    "available": 12,
-    "occupied": 3
+    "totalSlots": 15,
+    "availableSlots": 12
   }
 ]
 
 - POST /api/lots (ADMIN)
-Create a new parking lot.
+Create a new parking lot and auto-generate its slots.
 
 Body Example
 {
   "name": "Mall C - Level 2",
-  "capacity": 20,
-  "description": "Second floor parking"
+  "capacity": 20
 }
 
 - PUT /api/lots/:lotId (ADMIN)
-Update parking lot details.
+Update lot details (name, capacity).
+Automatically adds or removes slots based on capacity.
 
 Body Example
 {
@@ -200,46 +213,86 @@ Body Example
   "capacity": 25
 }
 
-- DELETE /api/lots/:lotId` (ADMIN)
-Delete a parking lot.
+- DELETE /api/lots/:lotId (ADMIN)
+Delete a parking lot (only allowed if no slots are OCCUPIED).
 
 ### PARKING SLOT ROUTES — /api/slots
 - GET /api/slots/lot/:lotId
-Get all slots for a specific parking lot.
+Get all slots for a specific lot.
+Returns bookedBy (populated) and bookingExpiry.
 
 Response Example
 [
   {
-    "id": "67a0ef...",
+    "_id": "67a0ef...",
     "code": "A1",
     "status": "AVAILABLE"
   },
   {
-    "id": "67a0f1...",
+    "_id": "67a0f1...",
     "code": "A2",
-    "status": "OCCUPIED"
+    "status": "RESERVED",
+    "bookedBy": {
+      "_id": "67a04c...",
+      "username": "chelsea"
+    },
+    "bookingExpiry": "2025-01-21T12:30:00.000Z"
   }
 ]
 
-- POST /api/slots/lot/:lotId` (ADMIN)
-Create multiple slots for a parking lot.
+- POST /api/slots/lot/:lotId (ADMIN)
+Create multiple slots for a lot.
 
 Body Example
 {
-  "count": 10,
-  "prefix": "C"
+  "slots": [
+    { "code": "C1" },
+    { "code": "C2" }
+  ]
 }
 
-- PUT /api/slots/:slotId` (ADMIN)
+- PUT /api/slots/:slotId/book (USER)
+Book an AVAILABLE slot → sets:
+status = "RESERVED"
+bookedBy = userId
+bookingExpiry = +30 minutes
+
+Response Example
+{
+  "_id": "67a0f1...",
+  "code": "A3",
+  "status": "RESERVED",
+  "bookedBy": {
+    "_id": "67a04c...",
+    "username": "chelsea"
+  },
+  "bookingExpiry": "2025-01-21T12:30:00.000Z"
+}
+
+- PUT /api/slots/:slotId/occupy (ADMIN)
+Mark a slot as occupied (Check-in).
+Allowed for AVAILABLE or RESERVED slots.
+
+Response Example
+{
+  "_id": "67a0f1...",
+  "code": "A3",
+  "status": "OCCUPIED"
+}
+
+- PUT /api/slots/:slotId (ADMIN)
 Manually update slot status.
 
 Body Example
 {
-  "status": "OCCUPIED"
+  "status": "AVAILABLE"
 }
 
-- PUT /api/slots/:slotId/clear` (ADMIN)
-Reset slot → AVAILABLE.
+- PUT /api/slots/:slotId/clear (ADMIN)
+Reset slot → AVAILABLE
+Removes:
+bookedBy
+bookingExpiry
 
 ### ADMIN ROUTES — /api/admin
 - GET /api/admin/statistics (ADMIN)
@@ -247,17 +300,21 @@ Returns occupancy data per lot + overall totals.
 
 Response Example
 {
-  "lots": [
+  "lotStatistics": [
     {
-      "name": "Mall A - Floor 1",
-      "total": 15,
-      "occupied": 3,
-      "available": 12
+      "lotId": "67a0d...",
+      "lotName": "Mall A - Floor 1",
+      "totalSlots": 15,
+      "occupiedSlots": 3,
+      "availableSlots": 12,
+      "occupancyPercentage": 20
     }
   ],
-  "overall": {
-    "occupiedTotal": 5,
-    "availableTotal": 22
+  "overallStatistics": {
+    "totalSlots": 27,
+    "totalOccupied": 5,
+    "totalAvailable": 22,
+    "occupancyPercentage": 18
   }
 }
 
@@ -265,42 +322,71 @@ Response Example
 
 My application handles errors consistently using structured JSON messages across all API endpoints. The main categories of errors include:
 
-1. Authentication Errors
-If a user tries to access a protected route without sending a valid JWT token:
+1. Unauthenticated User
+If a user accesses a protected route without a valid JWT:
+Missing token → 401 Unauthorized
+Invalid or expired token → 401 Unauthorized
+Token refers to a deleted user → 401 Unauthorized
+
+Examples:
+
+{ "error": "No token provided" }
 
 { "error": "Unauthorized" }
 
-If a token is invalid or expired, middleware responds with:
-
-{ "error": "Invalid token" }
-
-2. Authorization Errors
+2. Unauthorized Role Access
 If a USER tries to access an ADMIN-only endpoint:
+Returns 403 Forbidden
 
-{ "error": "Forbidden - Admin only" }
+Example:
 
-3. Validation Errors
-If required fields (e.g., name, email, password) are missing during register/login:
+{ "error": "Forbidden" }
+
+3. Invalid Payload / Missing Fields
+Triggered when required data is missing or invalid:
+Missing name/email/password → 400 Bad Request
+Email already used → 400 Bad Request
+Invalid login credentials → 400 Bad Request
+Invalid slot status → 400 Bad Request
+Trying to reduce lot capacity below safe level → 400 Bad Request
+
+Examples:
 
 { "error": "Missing fields" }
 
+{ "error": "Invalid credentials" }
 
-If the payload is invalid (incorrect status, invalid ID, etc.), the API returns:
+{ "error": "Invalid status" }
 
-{ "error": "Invalid request payload" }
+4. Resource Not Found
+For invalid IDs or deleted items:
+Lot not found → 404 Not Found
+Slot not found → 404 Not Found
 
-4. Resource Errors
-If a slot, lot, or user is not found:
+Example:
 
-{ "error": "Resource not found" }
+{ "error": "Lot not found" }
 
-5. Server Errors
-All unexpected exceptions return a uniform message:
+5. Business Rule Violations
+Handled properly with 400 Bad Request:
+Booking a slot that is not AVAILABLE
+Deleting a lot that still has OCCUPIED slots
+Occupying a slot that cannot transition to OCCUPIED
+
+Examples:
+
+{ "error": "Slot is not available" }
+
+{ "error": "Cannot delete lot. Some slots are still occupied." }
+
+6. Internal Server Errors
+All unexpected errors fall into a consistent catch-all:
+Returns 500 Internal Server Error
+
+Example:
 
 { "error": "Server error" }
 
-This keeps the API consistent and predictable for the frontend.
-
 ## Challenges & Future Improvements
 
-The biggest challenge for me was not a specific feature, but understanding how to design the entire application and complete all the requirements. Even though I’ve built CRUD-based systems before, this project required me to think more broadly about application structure — from planning the data models and API routes to organizing role-based access, slot status workflows, and the separation between frontend and backend. It was the first time I had to design an end-to-end architecture entirely by myself. To overcome this, I broke the requirements into smaller steps, starting with the database schema, then mapping out the REST API, defining the behavior for USER and ADMIN roles, and finally building the frontend pages around those APIs. This structured approach helped me stay organized and complete all required features on time.
+If I had another week, I would refine and extend the booking system that I’ve already implemented. While users can currently book a slot, I would expand this into a complete Booking & Check-in/Check-out flow, including dedicated endpoints and a bookings table to properly track which user owns each reservation. I would also enhance the UI/UX—especially on the lot details and booking screens—to make the experience smoother, clearer, and more intuitive, with better visual feedback and interaction design.
