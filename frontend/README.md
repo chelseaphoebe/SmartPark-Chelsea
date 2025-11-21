@@ -6,20 +6,14 @@ It helps users find available parking slots and allows admins to manage parking 
 ---
 
 ## Table of Contents
-- [Project Overview](#project-overview)
-- [Tech Stack](#tech-stack)
-- [System Architecture](#system-architecture)
-- [Database Schema](#database-schema)
-- [API Documentation](#api-documentation)
-- [Authentication & Roles](#authentication--roles)
-- [Seed / Initial Data](#seed--initial-data)
-- [How to Run (Backend)](#how-to-run-backend)
-- [How to Run (Frontend)](#how-to-run-frontend)
-- [Testing with Postman](#testing-with-postman)
-- [Error Handling](#error-handling)
-- [Challenges & Future Improvements](#challenges--future-improvements)
-- [Project Structure](#project-structure)
-- [Submission Checklist](#submission-checklist)
+- Project Overview
+- Tech Stack
+- Application's Architecture
+- Database Schema
+- Technology Choices
+- API Design
+- Error Handling
+- Challenges & Future Improvements
 
 ## Project Overview
 SmartPark-Chelsea implements the MVP for a smart parking system:
