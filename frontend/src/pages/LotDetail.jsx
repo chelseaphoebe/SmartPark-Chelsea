@@ -30,9 +30,6 @@ export default function LotDetail() {
     console.log("User changed:", user);
   }, [user]);
 
-  console.log("API URL =", import.meta.env.VITE_API_BASE_URL);
-
-
   const isOccupiedStatus = (s) => String(s || "").toUpperCase() === "OCCUPIED";
   const isReservedStatus = (s) => String(s || "").toUpperCase() === "RESERVED";
   const isAvailableStatus = (s) => String(s || "").toUpperCase() === "AVAILABLE";
