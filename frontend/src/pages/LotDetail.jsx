@@ -31,6 +31,8 @@ export default function LotDetail() {
   }, [user]);
 
   const isOccupiedStatus = (s) => String(s || "").toUpperCase() === "OCCUPIED";
+  const isReservedStatus = (s) => String(s || "").toUpperCase() === "RESERVED";
+  const isAvailableStatus = (s) => String(s || "").toUpperCase() === "AVAILABLE";
 
   useEffect(() => {
     let mounted = true;
@@ -80,6 +82,7 @@ export default function LotDetail() {
 
   const onSlotClick = (slot) => {
     if (isOccupiedStatus(slot.status)) return;
+    if (user?.role !== 'ADMIN' && !isAvailableStatus(slot.status)) return;
     
     if (selectedSlot && selectedSlot._id === slot._id) {
       setSelectedSlot(null); 
@@ -117,19 +120,26 @@ export default function LotDetail() {
     }
 
     try {
-      await api.put(`/slots/${selectedSlot._id}/book`);
-      setSlots((prev) =>
-        prev.map((s) => (s._id === selectedSlot._id ? { ...s, status: "OCCUPIED" } : s))
-      );
+      if (user.role === 'ADMIN') {
+        if (isReservedStatus(selectedSlot.status)) {
+          await api.put(`/slots/${selectedSlot._id}/occupy`);
+          toast.success(`Successfully occupied slot ${selectedSlot.code}!`);
+        } else {
+          await api.put(`/slots/${selectedSlot._id}/book`);
+          toast.success(`Successfully booked slot ${selectedSlot.code}!`);
+        }
+      } else {
+        await api.put(`/slots/${selectedSlot._id}/book`);
+        toast.success(`Successfully booked slot ${selectedSlot.code}!`);
+      }
       setSelectedSlot(null);
-      toast.success(`Successfully occupied slot ${selectedSlot.code}!`);
     } catch (err) {
-      console.error("Failed to occupy slot", err);
+      console.error("Failed to process slot", err);
       if (err.response?.status === 401) {
         toast.error("Session expired. Please login again.");
         navigate("/login");
       } else {
-        toast.error("Failed to occupy slot. Please try again.");
+        toast.error("Failed to process slot. Please try again.");
       }
     }
   };
@@ -186,7 +196,9 @@ export default function LotDetail() {
             <p className="mt-4 text-[#d8e8ff]">
               {selectedSlot 
                 ? `Selected: ${selectedSlot.code}` 
-                : "Select a slot and press NEXT to occupy."
+                : user?.role === 'ADMIN'
+                ? "Select a slot and press NEXT."
+                : "Select an available slot to book."
               }
             </p>
           </div>
@@ -210,8 +222,8 @@ export default function LotDetail() {
                 {selectedSlot 
                   ? `Selected: ${selectedSlot.code} - Click NEXT to confirm`
                   : user?.role === 'ADMIN' 
-                  ? "Tap to select — press NEXT to occupy. Double-click occupied slots to clear."
-                  : "Tap to select — press NEXT to occupy"
+                  ? "Tap to select — press NEXT. Double-click occupied slots to clear."
+                  : "Tap available slots to book."
                 }
               </p>
             </div>
@@ -224,9 +236,15 @@ export default function LotDetail() {
                   <span className="text-xs text-gray-600">Available</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="inline-block w-4 h-4 rounded bg-[#E8F1FF] border border-[#003E92]" />
-                  <span className="text-xs text-gray-600">Selected</span>
+                  <span className="inline-block w-4 h-4 rounded bg-yellow-200 border border-yellow-500" />
+                  <span className="text-xs text-gray-600">Reserved</span>
                 </div>
+                {user?.role === 'ADMIN' && (
+                  <div className="flex items-center gap-2">
+                    <span className="inline-block w-4 h-4 rounded bg-[#E8F1FF] border border-[#003E92]" />
+                    <span className="text-xs text-gray-600">Selected</span>
+                  </div>
+                )}
                 <div className="flex items-center gap-2">
                   <img src={CarImage} alt="car" className="w-6 h-6" />
                   <span className="text-xs text-gray-600">Occupied</span>
@@ -241,7 +259,10 @@ export default function LotDetail() {
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-6">
               {slots.map((slot) => {
                 const occupied = isOccupiedStatus(slot.status);
+                const reserved = isReservedStatus(slot.status);
+                const available = isAvailableStatus(slot.status);
                 const selected = selectedSlot && selectedSlot._id === slot._id;
+                const canSelect = available || (user?.role === 'ADMIN' && reserved);
 
                 return (
                   <div
@@ -254,9 +275,15 @@ export default function LotDetail() {
                         :
                       occupied 
                         ? "bg-transparent cursor-not-allowed" 
+                        : reserved
+                        ? user?.role === 'ADMIN'
+                          ? "bg-yellow-200 border border-yellow-500 cursor-pointer hover:shadow-md"
+                          : "bg-yellow-200 border border-yellow-500 cursor-not-allowed"
                         : selected
                         ? "bg-[#E8F1FF] border-2 border-[#003E92] shadow-md cursor-pointer"
-                        : "bg-white border border-gray-200 shadow-sm cursor-pointer hover:shadow-md"
+                        : canSelect
+                        ? "bg-white border border-gray-200 shadow-sm cursor-pointer hover:shadow-md"
+                        : "bg-white border border-gray-200 shadow-sm cursor-not-allowed opacity-75"
                     }`}
                     style={{ width: 100, height: 180 }}
                   >
@@ -268,7 +295,7 @@ export default function LotDetail() {
                       />
                     ) : (
                       <span className={`text-lg font-semibold ${
-                        selected ? "text-[#003E92]" : "text-gray-800"
+                        selected ? "text-[#003E92]" : reserved ? "text-yellow-700" : "text-gray-800"
                       }`}>
                         {slot.code}
                       </span>
@@ -289,7 +316,7 @@ export default function LotDetail() {
                 onClick={handleNext}
                 className="px-8 py-4 rounded-full text-white font-semibold bg-[#003E92] hover:bg-[#002a66] shadow-xl transition-all duration-200 transform hover:scale-105"
               >
-                NEXT
+                {user?.role === 'ADMIN' ? 'NEXT' : 'BOOK'}
               </button>
             </div>
           )}

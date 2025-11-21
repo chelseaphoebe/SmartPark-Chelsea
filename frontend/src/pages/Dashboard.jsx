@@ -72,7 +72,8 @@ export default function Dashboard() {
 
                 <Link
                   to={`/lots/${lot._id}`}
-                  className="bg-[#003E92] text-white px-4 py-2 rounded-lg hover:opacity-90 transition"
+                  className="px-4 py-2 hover:text-white rounded-xl text-white transition shadow-sm flex justify-center items-center text-center 
+             bg-[#003E92] hover:bg-[#002B63]"
                 >
                   View
                 </Link>

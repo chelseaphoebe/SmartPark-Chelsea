@@ -10,6 +10,8 @@ router.post('/lot/:lotId', auth, role('ADMIN'), slotController.createSlotsForLot
 
 router.put('/:slotId/book', auth, slotController.bookSlot);
 
+router.put('/:slotId/occupy', auth, role('ADMIN'), slotController.occupySlot);
+
 router.put('/:slotId', auth, role('ADMIN'), slotController.updateSlotStatus);
 
 router.put('/:slotId/clear', auth, role('ADMIN'), slotController.clearSlot);
