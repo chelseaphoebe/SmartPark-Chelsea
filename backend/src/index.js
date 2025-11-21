@@ -10,33 +10,34 @@ const adminRoutes = require('./routes/admin');
 
 const app = express();
 
+// -------------------------------
+//  CORS CONFIG (FIXED FOR RENDER)
+// -------------------------------
 const allowedOrigins = [
-  "https://smart-park-chelsea.vercel.app",
   "http://localhost:5173",
-  "http://localhost:3000"
+  "http://localhost:3000",
+  "http://127.0.0.1:5173",
+  "https://smart-park-chelsea.vercel.app",   // <-- Your deployed frontend
 ];
 
 app.use(cors({
-  origin: function(origin, callback) {
-    if (!origin) return callback(null, true);
-
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
     } else {
-      return callback(new Error("CORS not allowed"), false);
+      callback(new Error("CORS blocked"));
     }
   },
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"]
+  credentials: true
 }));
-
-app.options("*", cors());
 
 app.use(express.json());
 
 connectDB();
 
+// -------------------------------
+//  API ROUTES
+// -------------------------------
 app.use('/api/auth', authRoutes);
 app.use('/api/lots', lotRoutes);
 app.use('/api/slots', slotRoutes);
@@ -46,24 +47,33 @@ app.get("/", (req, res) => {
   res.send("API running...");
 });
 
+// -------------------------------
+//  START SERVER
+// -------------------------------
 const PORT = process.env.PORT || 5000;
-const server = app.listen(PORT, () => 
+const server = app.listen(PORT, () =>
   console.log("Server running on port " + PORT)
 );
 
-const io = require("socket.io")(server, {
+// -------------------------------
+//  SOCKET.IO (FIXED FOR PRODUCTION)
+// -------------------------------
+const { Server } = require("socket.io");
+
+const io = new Server(server, {
   cors: {
     origin: allowedOrigins,
-    methods: ["GET", "POST"]
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true
   }
 });
 
 app.set("io", io);
 
 io.on("connection", (socket) => {
-  console.log("User connected:", socket.id);
+  console.log("Socket connected:", socket.id);
 
   socket.on("disconnect", () => {
-    console.log("User disconnected:", socket.id);
+    console.log("Socket disconnected:", socket.id);
   });
 });
