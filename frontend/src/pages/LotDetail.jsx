@@ -62,11 +62,7 @@ export default function LotDetail() {
     loadData();
 
     // Real-time slot updates via WebSocket
-    // const socket = io("http://localhost:5000");
-    const SOCKET_URL = import.meta.env.VITE_SOCKET_URL;
-    const socket = io(SOCKET_URL, {
-      transports: ["websocket", "polling"],
-    });
+    const socket = io("http://localhost:5000");
     socket.on("slot-updated", (payload) => {
       if (!payload || payload.lotId !== id) return;
       // Update specific slot status in real-time
