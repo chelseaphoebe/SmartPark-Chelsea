@@ -384,3 +384,65 @@ Example:
 ## Challenges & Future Improvements
 
 If I had another week, I would refine and extend the booking system that I’ve already implemented. While users can currently book a slot, I would expand this into a complete Booking & Check-in/Check-out flow, including dedicated endpoints and a bookings table to properly track which user owns each reservation. I would also enhance the UI/UX—especially on the lot details and booking screens—to make the experience smoother, clearer, and more intuitive, with better visual feedback and interaction design.
+
+# How to Run the Application
+
+1. Clone the Repository
+git clone https://github.com/chelseaphoebe/SmartPark-Chelsea
+cd SmartPark-Chelsea
+
+2. Install Dependencies
+Backend
+cd backend
+npm install
+
+Frontend
+cd ../frontend
+npm install
+
+3. Set Up Environment Variables
+Create a .env file inside the backend folder:
+backend/.env
+MONGO_URI=mongodb://127.0.0.1:27017/smartpark
+JWT_SECRET=yourjwtsecret
+
+If you use a cloud DB (MongoDB Atlas), replace MONGO_URI accordingly.
+No env variables are needed for the frontend.
+
+4. Run the Database Seed
+The seed script creates:
+1 Admin → admin@example.com / admin123
+1 User → user@example.com / user123
+Sample Parking Lots
+Auto-generated Parking Slots
+
+Run:
+cd backend
+npm run seed
+
+If successful, you’ll see:
+MongoDB connected
+Admin user created
+Regular user created
+Sample parking lots and slots created
+Seed completed safely.
+
+5. Start the Backend Server
+From the backend folder:
+npm run dev
+
+Backend runs on:
+http://localhost:5000
+
+6. Start the Frontend Server
+From the frontend folder:
+npm run dev
+
+Frontend runs on:
+http://localhost:5173
+
+7. Access the Application
+Frontend: http://localhost:5173
+Backend API: http://localhost:5000
+
+Login as Admin or User to test the full flow.
