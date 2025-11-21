@@ -13,7 +13,7 @@ const app = express();
 
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
-    ? ['https://your-frontend-domain.com'] 
+    ? ['https://smart-park-chelsea-git-master-chelseaphoebes-projects.vercel.app', 'https://smartpark-chelsea.vercel.app'] 
     : ['http://localhost:3000', 'http://localhost:5173'],
   credentials: true
 }));
@@ -46,7 +46,7 @@ const server = app.listen(PORT, () => console.log("Server running on port " + PO
 const io = require('socket.io')(server, { 
   cors: { 
     origin: process.env.NODE_ENV === 'production' 
-      ? ['https://your-frontend-domain.com'] 
+      ? ['https://smart-park-chelsea-git-master-chelseaphoebes-projects.vercel.app', 'https://smartpark-chelsea.vercel.app'] 
       : ['http://localhost:3000', 'http://localhost:5173'],
     credentials: true
   } 
